@@ -19,8 +19,15 @@ namespace TinyUrlApi.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateUrlRequest request)
         {
-            var result = await _service.CreateShortUrlAsync(request);
-            return Ok(result);
+            try
+            {
+                var result = await _service.CreateShortUrlAsync(request);
+                return Ok(result);
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet]

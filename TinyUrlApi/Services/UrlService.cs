@@ -17,10 +17,58 @@ namespace TinyUrlApi.Services
             _httpContext = httpContext;
         }
 
+        //public async Task<UrlResponse> CreateShortUrlAsync(CreateUrlRequest request)
+        //{
+        //    if (!Uri.IsWellFormedUriString(request.OriginalUrl, UriKind.Absolute))
+        //        throw new Exception("Invalid URL");
+
+        //    string shortCode;
+
+        //    do
+        //    {
+        //        shortCode = ShortCodeGenerator.Generate();
+        //    }
+        //    while (await _db.Urls.AnyAsync(x => x.ShortCode == shortCode));
+
+        //    var url = new Url
+        //    {
+        //        OriginalUrl = request.OriginalUrl,
+        //        ShortCode = shortCode,
+        //        IsPrivate = request.IsPrivate
+        //    };
+
+        //    _db.Urls.Add(url);
+        //    await _db.SaveChangesAsync();
+
+        //    //var baseUrl = $"{_httpContext.HttpContext.Request.Scheme}://{_httpContext.HttpContext.Request.Host}";
+        //    var baseUrl = $"{_httpContext.HttpContext.Request.Scheme}://{_httpContext.HttpContext.Request.Host}";
+        //    return new UrlResponse
+        //    {
+        //        Id = url.Id,
+        //        OriginalUrl = url.OriginalUrl,
+        //        ShortUrl = $"{baseUrl}/{url.ShortCode}",
+        //        ClickCount = url.ClickCount
+        //    };
+        //}
+
         public async Task<UrlResponse> CreateShortUrlAsync(CreateUrlRequest request)
         {
-            if (!Uri.IsWellFormedUriString(request.OriginalUrl, UriKind.Absolute))
-                throw new Exception("Invalid URL");
+            if (string.IsNullOrWhiteSpace(request.OriginalUrl))
+                throw new ArgumentException("URL cannot be empty");
+
+            // ✅ Add scheme if missing
+            if (!request.OriginalUrl.StartsWith("http://") &&
+                !request.OriginalUrl.StartsWith("https://"))
+            {
+                request.OriginalUrl = "https://" + request.OriginalUrl;
+            }
+
+            // ✅ Validate properly
+            if (!Uri.TryCreate(request.OriginalUrl, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                throw new ArgumentException("Invalid URL");
+            }
 
             string shortCode;
 
@@ -40,8 +88,8 @@ namespace TinyUrlApi.Services
             _db.Urls.Add(url);
             await _db.SaveChangesAsync();
 
-            //var baseUrl = $"{_httpContext.HttpContext.Request.Scheme}://{_httpContext.HttpContext.Request.Host}";
             var baseUrl = $"{_httpContext.HttpContext.Request.Scheme}://{_httpContext.HttpContext.Request.Host}";
+
             return new UrlResponse
             {
                 Id = url.Id,
